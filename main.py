@@ -15,6 +15,45 @@ def main():
     network = SimpleNeuralNetwork()
     print(network.feed_forward(x))
     print("Success!")
+    
+    data = np.array([
+        #Weight(lbs), Height (in), Name
+        [133, 65], #Alice
+        [160, 72], #Bob
+        [152, 70], #Charlie
+        [120, 60], #Diana
+    ])
+    
+    shift = data.mean(axis=0) 
+    #1 x 2 array containing mean values to shift the data by. 
+    #0th index is weight shift and 1st index is height shift
+    
+    for i in range(len(data)):
+        data[i][0] -= shift[0]
+        data[i][1] -= shift[1]
+    
+    answers = np.array([
+        #Gender (1 if Female, 0 if Male), Name
+        1, #Alice
+        0, #Bob
+        0, #Charlie
+        1, #Diana
+    ])
+    network2 = SimpleNeuralNetwork()
+    print("Training Neural Network")
+    network2.train(data, answers, 1000)
+    print("Testing Neural Network")
+    emily = np.array([128, 63])
+    frank = np.array([155, 68])
+    emily[0] -=shift[0]
+    emily[1] -= shift[1]
+    frank[0] -= shift[0]
+    frank[1] -= shift[1]
+    print("Emily weighs 128 lbs and is 63 inches tall.")
+    print("Frank weights 155 lbs and is 68 inches tall.")
+    print("Running Neural Network (Outputs closer to 1 indicate Female, Outputs closer to 0 indicate Male)")
+    print("Result for Emily: %.3f" % network2.feed_forward(emily))
+    print("Results for Frank: %.3f" %network2.feed_forward(frank))
 
 def sigmoid(x):
     """Returns the output of the sigmoid activation function
@@ -88,7 +127,7 @@ class SimpleNeuralNetwork:
         
         return o1_output
     
-    def back_propogation(self, input, true_value):
+    def back_propagation(self, input, true_value):
         """Back Propogates to find the partial derivatives of various aspects in the neural network to be used in computation of the required change in weights and bias
 
         Args:
@@ -125,13 +164,7 @@ class SimpleNeuralNetwork:
         
         
     def stochastic_gradient_descent(self, calculation, true_value, learning_rate):
-        d_L_d_pred, d_pred_d_h, d_h_d_w, d_h_d_b = SimpleNeuralNetwork.back_propogation(calculation, true_value)
-        # for i in range(1,5):
-        #     if ((i%2) == False):
-        #         self.weights[i-1] -= learning_rate*d_L_d_pred*d_pred_d_h[0]*d_h_d_w[i-1]
-        #     else:
-                
-        #         print("Hello World")
+        d_L_d_pred, d_pred_d_h, d_h_d_w, d_h_d_b = self.back_propagation(calculation, true_value)
         self.weights[0] -= learning_rate*d_L_d_pred*d_pred_d_h[0]*d_h_d_w[0]
         self.weights[1] -= learning_rate*d_L_d_pred*d_pred_d_h[0]*d_h_d_w[1]
         self.weights[2] -= learning_rate*d_L_d_pred*d_pred_d_h[1]*d_h_d_w[2]
@@ -143,21 +176,16 @@ class SimpleNeuralNetwork:
         self.bias[2] -= learning_rate*d_L_d_pred*d_h_d_b[2]
         
     def train(self, data, true_value, number_of_episodes):
-        number_of_episodes = 1000
         for number in range(number_of_episodes):
             for x, y_true in zip(data, true_value):
                 self.stochastic_gradient_descent(x, y_true, 0.1)
-                #PUT IN CORRECT PAREMETERS INTO FUNCTION
-            if (number + 1) % 10 == 0:
+            if (number + 1) % 100 == 0:
                 prediction = np.apply_along_axis(self.feed_forward, 1, data)
                 loss = mean_squared_error_loss(true_value, prediction)
-                print("Episode %d, Mean Squared Error Loss: %.3f" % (number + 1, loss))
-            
+                print("Episode %d, Mean Squared Error Loss: %.3f" % (number + 1, loss))     
         
 def mean_squared_error_loss(calculated, predicted):
     return ((calculated - predicted)**2).mean()
-    
-        
 
 if __name__ == "__main__":
     main()
